@@ -1,0 +1,22 @@
+# Environment
+.env
+*.env
+
+# Data files (too large for Git)
+data/raw/*.csv
+data/raw/*.json
+data/processed/*.csv
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
