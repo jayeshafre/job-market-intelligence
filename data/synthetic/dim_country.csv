@@ -1,0 +1,61 @@
+country_id,country_code,country_name,region,sub_region,currency_code
+1,US,United States,Americas,Northern America,USD
+2,GB,United Kingdom,Europe,Northern Europe,GBP
+3,DE,Germany,Europe,Western Europe,EUR
+4,FR,France,Europe,Western Europe,EUR
+5,CA,Canada,Americas,Northern America,CAD
+6,AU,Australia,Oceania,Australia and New Zealand,AUD
+7,JP,Japan,Asia,Eastern Asia,JPY
+8,SG,Singapore,Asia,South-Eastern Asia,SGD
+9,NL,Netherlands,Europe,Western Europe,EUR
+10,SE,Sweden,Europe,Northern Europe,SEK
+11,CH,Switzerland,Europe,Western Europe,CHF
+12,IE,Ireland,Europe,Northern Europe,EUR
+13,NZ,New Zealand,Oceania,Australia and New Zealand,NZD
+14,DK,Denmark,Europe,Northern Europe,DKK
+15,NO,Norway,Europe,Northern Europe,NOK
+16,FI,Finland,Europe,Northern Europe,EUR
+17,BE,Belgium,Europe,Western Europe,EUR
+18,AT,Austria,Europe,Western Europe,EUR
+19,IL,Israel,Asia,Western Asia,ILS
+20,KR,South Korea,Asia,Eastern Asia,KRW
+21,IN,India,Asia,Southern Asia,INR
+22,CN,China,Asia,Eastern Asia,CNY
+23,BR,Brazil,Americas,South America,BRL
+24,MX,Mexico,Americas,Central America,MXN
+25,ZA,South Africa,Africa,Sub-Saharan Africa,ZAR
+26,NG,Nigeria,Africa,Sub-Saharan Africa,NGN
+27,EG,Egypt,Africa,Northern Africa,EGP
+28,AR,Argentina,Americas,South America,ARS
+29,CL,Chile,Americas,South America,CLP
+30,CO,Colombia,Americas,South America,COP
+31,PH,Philippines,Asia,South-Eastern Asia,PHP
+32,ID,Indonesia,Asia,South-Eastern Asia,IDR
+33,TH,Thailand,Asia,South-Eastern Asia,THB
+34,MY,Malaysia,Asia,South-Eastern Asia,MYR
+35,VN,Vietnam,Asia,South-Eastern Asia,VND
+36,PK,Pakistan,Asia,Southern Asia,PKR
+37,BD,Bangladesh,Asia,Southern Asia,BDT
+38,UA,Ukraine,Europe,Eastern Europe,UAH
+39,PL,Poland,Europe,Eastern Europe,PLN
+40,CZ,Czech Republic,Europe,Eastern Europe,CZK
+41,RO,Romania,Europe,Eastern Europe,RON
+42,HU,Hungary,Europe,Eastern Europe,HUF
+43,PT,Portugal,Europe,Southern Europe,EUR
+44,ES,Spain,Europe,Southern Europe,EUR
+45,IT,Italy,Europe,Southern Europe,EUR
+46,GR,Greece,Europe,Southern Europe,EUR
+47,TR,Turkey,Asia,Western Asia,TRY
+48,SA,Saudi Arabia,Asia,Western Asia,SAR
+49,AE,United Arab Emirates,Asia,Western Asia,AED
+50,QA,Qatar,Asia,Western Asia,QAR
+51,KE,Kenya,Africa,Sub-Saharan Africa,KES
+52,GH,Ghana,Africa,Sub-Saharan Africa,GHS
+53,ET,Ethiopia,Africa,Sub-Saharan Africa,ETB
+54,RU,Russia,Europe,Eastern Europe,RUB
+55,KZ,Kazakhstan,Asia,Central Asia,KZT
+56,UZ,Uzbekistan,Asia,Central Asia,UZS
+57,TW,Taiwan,Asia,Eastern Asia,TWD
+58,HK,Hong Kong,Asia,Eastern Asia,HKD
+59,NP,Nepal,Asia,Southern Asia,NPR
+60,LK,Sri Lanka,Asia,Southern Asia,LKR

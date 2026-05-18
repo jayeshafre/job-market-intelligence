@@ -1,0 +1,21 @@
+industry_id,industry_name,sector,ai_adoption_index
+1,Technology & Software,Technology,88.4
+2,Artificial Intelligence & ML,Technology,97.2
+3,Financial Services & Fintech,Finance,74.6
+4,Healthcare & Life Sciences,Healthcare,52.3
+5,E-Commerce & Retail,Commerce,68.9
+6,Manufacturing & Automation,Manufacturing,79.5
+7,Telecommunications,Technology,71.2
+8,Media & Entertainment,Creative,55.8
+9,Education & EdTech,Education,48.7
+10,Consulting & Professional Services,Services,63.4
+11,Logistics & Supply Chain,Logistics,72.1
+12,Energy & Clean Technology,Energy,59.3
+13,Government & Public Sector,Public,34.6
+14,Real Estate & PropTech,Real Estate,47.8
+15,Agriculture & AgriTech,Agriculture,41.2
+16,Legal & Compliance,Services,38.9
+17,Human Resources & Recruiting,Services,61.7
+18,Automotive & Mobility,Manufacturing,76.4
+19,Aerospace & Defense,Manufacturing,65.8
+20,Biotechnology & Pharma,Healthcare,56.9

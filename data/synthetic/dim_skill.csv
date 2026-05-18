@@ -1,0 +1,61 @@
+skill_id,skill_name,skill_category,is_ai_related,growth_pct
+1,Python,Programming,True,33.95
+2,SQL,Programming,False,20.71
+3,R,Programming,True,9.74
+4,Java,Programming,False,0.48
+5,JavaScript,Programming,False,8.52
+6,TypeScript,Programming,False,26.38
+7,Go (Golang),Programming,False,21.0
+8,Rust,Programming,False,25.69
+9,C++,Programming,False,3.71
+10,Scala,Programming,True,7.02
+11,TensorFlow,Framework,True,24.17
+12,PyTorch,Framework,True,38.47
+13,Hugging Face Transformers,Framework,True,66.45
+14,LangChain,Framework,True,82.61
+15,Scikit-learn,Framework,True,20.84
+16,Keras,Framework,True,10.19
+17,Apache Spark,Framework,False,11.4
+18,dbt (data build tool),Framework,False,39.24
+19,FastAPI,Framework,False,40.5
+20,React,Framework,False,20.67
+21,AWS,Cloud,False,30.3
+22,Google Cloud Platform,Cloud,True,24.53
+23,Microsoft Azure,Cloud,True,28.65
+24,Kubernetes,Cloud,False,33.43
+25,Docker,Cloud,False,26.34
+26,Terraform,Cloud,False,29.39
+27,Snowflake,Cloud,False,36.58
+28,Databricks,Cloud,True,44.37
+29,OpenAI API,Cloud,True,115.62
+30,Vertex AI,Cloud,True,57.95
+31,Machine Learning,Domain,True,29.02
+32,Deep Learning,Domain,True,35.25
+33,Natural Language Processing,Domain,True,44.83
+34,Computer Vision,Domain,True,37.11
+35,Generative AI,Domain,True,121.45
+36,Large Language Models,Domain,True,136.27
+37,Reinforcement Learning,Domain,True,24.56
+38,MLOps,Domain,True,51.86
+39,Data Engineering,Domain,False,29.72
+40,Business Intelligence,Domain,False,12.97
+41,Statistics,Domain,True,9.6
+42,A/B Testing,Domain,False,11.38
+43,Data Visualization,Domain,False,15.63
+44,Apache Kafka,Framework,False,18.73
+45,Airflow,Framework,False,19.75
+46,Power BI,Framework,False,23.34
+47,Tableau,Framework,False,8.56
+48,Leadership,Soft Skill,False,4.63
+49,Communication,Soft Skill,False,5.9
+50,Project Management,Soft Skill,False,6.76
+51,Agile / Scrum,Soft Skill,False,15.5
+52,Critical Thinking,Soft Skill,False,7.35
+53,Cybersecurity,Domain,False,31.17
+54,Prompt Engineering,Domain,True,149.03
+55,AI Ethics & Governance,Domain,True,58.58
+56,Blockchain,Domain,False,12.37
+57,Edge Computing,Domain,False,24.16
+58,Quantum Computing,Domain,True,21.16
+59,AutoML,Framework,True,35.26
+60,Vector Databases,Framework,True,97.29

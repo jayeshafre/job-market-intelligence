@@ -1,0 +1,82 @@
+role_id,role_name,role_category,seniority_level,is_remote_eligible,ai_disruption_risk
+1,Software Engineer,Engineering,Mid,True,20.32
+2,Senior Software Engineer,Engineering,Senior,True,13.77
+3,Data Scientist,Analytics,Mid,True,15.31
+4,Senior Data Scientist,Analytics,Senior,True,11.88
+5,Machine Learning Engineer,Engineering,Mid,True,6.46
+6,Senior ML Engineer,Engineering,Senior,True,11.13
+7,Data Engineer,Engineering,Mid,True,17.43
+8,DevOps Engineer,Engineering,Mid,True,24.1
+9,Cloud Architect,Engineering,Senior,True,8.8
+10,AI Research Scientist,Engineering,Senior,True,5.85
+11,Product Manager,Management,Senior,True,23.8
+12,Senior Product Manager,Management,Senior,True,24.29
+13,Data Analyst,Analytics,Entry,True,29.91
+14,Business Intelligence Analyst,Analytics,Mid,True,33.76
+15,Full Stack Developer,Engineering,Mid,True,19.4
+16,Frontend Developer,Engineering,Entry,True,21.69
+17,Backend Developer,Engineering,Mid,True,20.78
+18,Mobile Developer,Engineering,Mid,True,15.65
+19,Cybersecurity Engineer,Engineering,Mid,True,16.39
+20,Blockchain Developer,Engineering,Mid,True,17.22
+21,UX/UI Designer,Design,Mid,True,31.21
+22,UX Researcher,Design,Mid,True,25.78
+23,Product Designer,Design,Senior,True,30.59
+24,Engineering Manager,Management,Senior,True,21.95
+25,VP of Engineering,Management,Director,True,19.55
+26,CTO,Management,C-Suite,False,12.66
+27,Chief Data Officer,Management,C-Suite,False,12.17
+28,Data Governance Analyst,Analytics,Mid,True,31.41
+29,MLOps Engineer,Engineering,Mid,True,9.28
+30,NLP Engineer,Engineering,Mid,True,10.18
+31,Computer Vision Engineer,Engineering,Mid,True,9.11
+32,Robotics Engineer,Engineering,Senior,False,13.07
+33,Automation Test Engineer,Engineering,Entry,True,39.98
+34,QA Engineer,Engineering,Entry,True,43.79
+35,Site Reliability Engineer,Engineering,Senior,True,18.09
+36,Platform Engineer,Engineering,Mid,True,14.73
+37,Data Architect,Engineering,Senior,True,10.91
+38,Analytics Engineer,Analytics,Mid,True,17.03
+39,Business Analyst,Analytics,Mid,True,34.89
+40,Financial Analyst,Finance,Mid,True,43.49
+41,Quantitative Analyst,Finance,Senior,True,21.66
+42,Actuarial Analyst,Finance,Mid,False,41.23
+43,Risk Analyst,Finance,Mid,True,41.5
+44,Compliance Officer,Legal,Mid,False,45.99
+45,Paralegal,Legal,Entry,False,60.73
+46,Recruiter,HR,Entry,True,54.73
+47,HR Business Partner,HR,Mid,True,43.01
+48,Talent Acquisition Specialist,HR,Mid,True,46.72
+49,Customer Success Manager,Sales,Mid,True,40.68
+50,Sales Development Representative,Sales,Entry,True,53.18
+51,Account Executive,Sales,Mid,True,39.7
+52,Marketing Manager,Marketing,Mid,True,33.05
+53,Growth Hacker,Marketing,Mid,True,35.91
+54,SEO Specialist,Marketing,Entry,True,62.55
+55,Content Writer,Marketing,Entry,True,69.24
+56,Data Entry Clerk,Operations,Entry,False,86.27
+57,Administrative Assistant,Operations,Entry,False,79.31
+58,Customer Support Agent,Operations,Entry,True,72.88
+59,Warehouse Operator,Operations,Entry,False,74.28
+60,Supply Chain Analyst,Logistics,Mid,True,36.0
+61,Operations Manager,Management,Senior,False,33.58
+62,Research Scientist,Engineering,Senior,True,8.5
+63,Bioinformatics Scientist,Engineering,Senior,True,11.66
+64,Healthcare Data Analyst,Analytics,Mid,True,28.15
+65,Clinical Research Coordinator,Healthcare,Mid,False,32.64
+66,Physician / Doctor,Healthcare,Senior,False,9.78
+67,Nurse Practitioner,Healthcare,Senior,False,13.01
+68,Radiologist,Healthcare,Senior,False,21.43
+69,Pharmacist,Healthcare,Senior,False,25.12
+70,Civil Engineer,Engineering,Mid,False,21.26
+71,Mechanical Engineer,Engineering,Mid,False,22.3
+72,Electrical Engineer,Engineering,Mid,False,22.26
+73,Aerospace Engineer,Engineering,Senior,False,20.07
+74,Manufacturing Technician,Operations,Entry,False,66.54
+75,Quality Control Inspector,Operations,Entry,False,69.01
+76,Accountant,Finance,Mid,False,53.27
+77,Tax Consultant,Finance,Senior,False,47.86
+78,Graphic Designer,Design,Mid,True,45.33
+79,Video Editor,Design,Mid,True,49.0
+80,Professor / Academic,Education,Senior,False,18.39
+81,EdTech Curriculum Designer,Education,Mid,True,30.05
