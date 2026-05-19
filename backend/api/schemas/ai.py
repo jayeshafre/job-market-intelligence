@@ -11,6 +11,7 @@ Place this file at: backend/api/schemas/ai.py
 """
 
 from pydantic import BaseModel, Field
+from typing import Any
 
 
 # =============================================================================
@@ -77,4 +78,47 @@ class KPIEnrichedChatResponse(BaseModel):
     )
     kpi_context_used: bool = Field(
         description="True if real platform KPI data was injected into this answer."
+    )
+
+# =============================================================================
+# PHASE 4 — RECOMMENDATION SCHEMAS 
+# =============================================================================
+ 
+class Recommendation(BaseModel):
+    """
+    A single structured recommendation from the Recommendation Engine.
+ 
+    These are rendered as cards on the frontend — each has a title,
+    rationale, category, priority, and estimated impact.
+    """
+    title: str = Field(description="Short action-oriented title.")
+    category: str = Field(
+        description="role | skill | country | industry | career_pivot"
+    )
+    rationale: str = Field(description="Why this is recommended.")
+    priority: str = Field(description="high | medium | low")
+    estimated_impact: str = Field(
+        description="Quantified impact where possible (e.g. +23% salary)."
+    )
+ 
+ 
+class RecommendationResponse(BaseModel):
+    """
+    Response from POST /api/v1/ai/chat/v4
+ 
+    Adds a structured `recommendations` list alongside the text answer.
+    The frontend renders the answer as text and the recommendations as cards.
+    """
+    answer: str
+    model: str
+    tokens_used: int
+    question: str
+    detected_intent: str
+    kpi_context_used: bool
+    recommendations: list[Any] = Field(
+        default=[],
+        description="Structured recommendations list. Empty if parse failed.",
+    )
+    recommendations_parsed: bool = Field(
+        description="True if recommendations were successfully extracted from response."
     )

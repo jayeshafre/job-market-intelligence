@@ -25,6 +25,8 @@ from api.database import get_db
 from api.schemas.ai import KPIEnrichedChatResponse
 from api.services.ai import kpi_enriched_ask
 from fastapi import Depends
+from api.schemas.ai import RecommendationResponse
+from api.services.ai import recommendation_ask
 
 logger = logging.getLogger(__name__)
 
@@ -220,6 +222,74 @@ def chat_v3(
         logger.exception(f"[AI router] /chat/v3 unexpected error: {e}")
         raise HTTPException(status_code=500, detail="Unexpected error in AI service.")
 
+# =============================================================================
+# POST /api/v1/ai/chat/v4  (Phase 4 — recommendations)
+# =============================================================================
+ 
+@router.post(
+    "/chat/v4",
+    response_model=RecommendationResponse,
+    summary="Ask the AI Assistant (Phase 4 — with recommendations)",
+    description=(
+        "The most complete AI endpoint. Detects intent, queries real KPIs, "
+        "generates a text answer, AND returns 3 structured actionable "
+        "recommendations as typed objects. "
+        "Recommendations are rendered as cards on the frontend. "
+        "Returns recommendations_parsed=true when JSON extraction succeeded."
+    ),
+)
+def chat_v4(
+    request: ChatRequest,
+    db: Session = Depends(get_db),
+) -> RecommendationResponse:
+    """
+    Phase 4 recommendation endpoint.
+ 
+    Example request:
+        POST /api/v1/ai/chat/v4
+        {
+            "question": "Which skills should I learn to maximize salary in 2024?",
+            "context": "career optimization"
+        }
+ 
+    Example response:
+        {
+            "answer": "Based on your platform data, to maximize salary...",
+            "model": "llama-3.1-8b-instant",
+            "tokens_used": 891,
+            "question": "Which skills should I learn to maximize salary in 2024?",
+            "detected_intent": "skills",
+            "kpi_context_used": true,
+            "recommendations": [
+                {
+                    "title": "Master Prompt Engineering for AI roles",
+                    "category": "skill",
+                    "rationale": "Highest growth skill at 149% with direct salary impact...",
+                    "priority": "high",
+                    "estimated_impact": "+35% salary premium over non-AI engineers"
+                },
+                ...
+            ],
+            "recommendations_parsed": true
+        }
+    """
+    try:
+        result = recommendation_ask(
+            question=request.question,
+            context=request.context,
+            db=db,
+        )
+        return RecommendationResponse(**result)
+ 
+    except RuntimeError as e:
+        logger.error(f"[AI router] /chat/v4 error: {e}")
+        raise HTTPException(status_code=503, detail=str(e))
+ 
+    except Exception as e:
+        logger.exception(f"[AI router] /chat/v4 unexpected error: {e}")
+        raise HTTPException(status_code=500, detail="Unexpected error in AI service.")
+ 
+ 
 # =============================================================================
 # GET /api/v1/ai/health  (unchanged from Phase 1)
 # =============================================================================

@@ -22,7 +22,11 @@ from api.core.groq_client import get_groq_client, get_groq_model
 from api.core.orchestrator import orchestrate
 from sqlalchemy.orm import Session
 from api.core.kpi_context import build_kpi_context
-
+from api.core.recommendation_engine import (
+        build_recommendation_prompt,
+        parse_recommendations,
+)
+ 
 logger = logging.getLogger(__name__)
 
 
@@ -259,6 +263,120 @@ def kpi_enriched_ask(question: str, context: str, db) -> dict:
             "question":          question,
             "detected_intent":   result.detected_intent.value,
             "kpi_context_used":  kpi_context_used,
+        }
+ 
+    except RateLimitError:
+        logger.warning("[AI] Rate limit hit.")
+        raise RuntimeError("AI service is temporarily rate-limited. Please wait and try again.")
+ 
+    except APIConnectionError:
+        logger.error("[AI] Connection error.")
+        raise RuntimeError("Could not reach the AI service. Check your internet connection.")
+ 
+    except APIStatusError as e:
+        logger.error(f"[AI] API error: {e.status_code} - {e.message}")
+        raise RuntimeError(f"AI service returned an error (status {e.status_code}).")
+    
+def recommendation_ask(question: str, context: str, db) -> dict:
+    """
+    Phase 4 function — generates a text answer + structured recommendations.
+ 
+    Build order:
+      1. Detect intent (orchestrator)
+      2. Fetch real KPIs (Phase 3 kpi_context builder)
+      3. Build recommendation instructions (Phase 4 engine)
+      4. Combine: intent prompt + KPI data + recommendation instructions
+      5. Call Groq with the fully enriched prompt
+      6. Parse the JSON recommendations out of the response
+      7. Return text answer + structured recommendations separately
+ 
+    The magic is in step 4: the system prompt is now THREE layers deep:
+      Layer 1: Expert persona (intent-specific, from Phase 2)
+      Layer 2: Real KPI data from your warehouse (Phase 3)
+      Layer 3: Recommendation format instructions (Phase 4)
+ 
+    Args:
+        question: The user's question.
+        context:  Optional domain context.
+        db:       SQLAlchemy Session for KPI queries.
+ 
+    Returns:
+        dict with keys: answer, model, tokens_used, question,
+                        detected_intent, kpi_context_used,
+                        recommendations, recommendations_parsed
+    """
+    from api.core.kpi_context import build_kpi_context
+    from api.core.orchestrator import orchestrate
+    from api.core.recommendation_engine import (
+        build_recommendation_prompt,
+        parse_recommendations,
+    )
+ 
+    client = get_groq_client()
+    model  = get_groq_model()
+ 
+    # Step 1: Detect intent + get base system prompt
+    result = orchestrate(question=question, context=context)
+ 
+    # Step 2: Fetch real KPI data from warehouse
+    kpi_block = build_kpi_context(intent=result.detected_intent, db=db)
+    kpi_context_used = bool(kpi_block)
+ 
+    # Step 3: Build recommendation instructions for this intent
+    rec_prompt = build_recommendation_prompt(
+        intent=result.detected_intent,
+        kpi_context=kpi_block,
+    )
+ 
+    # Step 4: Assemble the fully enriched system prompt
+    # This is the most powerful prompt in the entire system so far.
+    # Three layers: expert persona + real data + structured output instructions
+    system_prompt_parts = [result.system_prompt]
+    if kpi_block:
+        system_prompt_parts.append(kpi_block)
+    system_prompt_parts.append(rec_prompt)
+ 
+    enriched_system_prompt = "\n\n".join(system_prompt_parts)
+ 
+    logger.info(
+        f"[AI] recommendation_ask() | intent={result.detected_intent.value} | "
+        f"kpi_injected={kpi_context_used} | model={model}"
+    )
+ 
+    try:
+        # Step 5: Call Groq — needs more tokens because response includes JSON
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": enriched_system_prompt},
+                {"role": "user",   "content": result.user_message},
+            ],
+            temperature=0.3,
+            max_tokens=1200,  # more room: answer text + JSON recommendations block
+        )
+ 
+        raw_answer  = response.choices[0].message.content
+        tokens_used = response.usage.total_tokens
+ 
+        # Step 6: Parse the JSON recommendations out of the raw response
+        parsed = parse_recommendations(raw_answer)
+ 
+        logger.info(
+            f"[AI] recommendation_ask() done | intent={result.detected_intent.value} | "
+            f"tokens={tokens_used} | recs_parsed={parsed.parse_success} | "
+            f"rec_count={len(parsed.recommendations)}"
+        )
+ 
+        # Step 7: Return structured result
+        return {
+            "answer":                  parsed.clean_answer,
+            "model":                   model,
+            "tokens_used":             tokens_used,
+            "question":                question,
+            "detected_intent":         result.detected_intent.value,
+            "kpi_context_used":        kpi_context_used,
+            "recommendations":         parsed.recommendations,
+            "recommendations_parsed":  parsed.parse_success,
         }
  
     except RateLimitError:
