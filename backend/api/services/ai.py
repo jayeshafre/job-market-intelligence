@@ -20,6 +20,8 @@ from groq import APIConnectionError, APIStatusError, RateLimitError
 
 from api.core.groq_client import get_groq_client, get_groq_model
 from api.core.orchestrator import orchestrate
+from sqlalchemy.orm import Session
+from api.core.kpi_context import build_kpi_context
 
 logger = logging.getLogger(__name__)
 
@@ -175,3 +177,99 @@ def orchestrated_ask(question: str, context: str) -> dict:
     except APIStatusError as e:
         logger.error(f"[AI] API error: {e.status_code} - {e.message}")
         raise RuntimeError(f"AI service returned an error (status {e.status_code}).")
+    
+def kpi_enriched_ask(question: str, context: str, db) -> dict:
+    """
+    Phase 3 function — injects real KPI data from the database into the prompt.
+ 
+    What's different from orchestrated_ask():
+      1. Calls orchestrate() to detect intent (same as Phase 2)
+      2. Calls build_kpi_context(intent, db) to query REAL database KPIs
+      3. Appends the KPI block to the system prompt before calling Groq
+      4. Returns kpi_context_used=True/False so the frontend can show a badge
+ 
+    This is the most impactful change in the entire AI layer so far:
+      Phase 1: generic LLM answer
+      Phase 2: intent-focused LLM answer
+      Phase 3: intent-focused LLM answer + grounded in your actual data
+ 
+    Args:
+        question: The user's question.
+        context:  Optional domain context.
+        db:       SQLAlchemy Session — needed to query the warehouse.
+ 
+    Returns:
+        dict with keys: answer, model, tokens_used, question,
+                        detected_intent, kpi_context_used
+    """
+    from api.core.kpi_context import build_kpi_context
+    from api.core.orchestrator import orchestrate
+ 
+    client = get_groq_client()
+    model  = get_groq_model()
+ 
+    # Step 1: Detect intent + get intent-specific system prompt
+    result = orchestrate(question=question, context=context)
+ 
+    # Step 2: Build real KPI context from the database
+    kpi_block = build_kpi_context(intent=result.detected_intent, db=db)
+    kpi_context_used = bool(kpi_block)
+ 
+    # Step 3: Inject KPI data into the system prompt
+    # The system prompt = intent-specific expert persona + real platform data
+    # This is what transforms a generic LLM into a platform-aware analyst.
+    if kpi_block:
+        enriched_system_prompt = (
+            result.system_prompt
+            + "\n\n"
+            + kpi_block
+        )
+    else:
+        # Graceful fallback — if DB query fails, still answer without data
+        enriched_system_prompt = result.system_prompt
+ 
+    logger.info(
+        f"[AI] kpi_enriched_ask() | intent={result.detected_intent.value} | "
+        f"kpi_injected={kpi_context_used} | model={model}"
+    )
+ 
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": enriched_system_prompt},
+                {"role": "user",   "content": result.user_message},
+            ],
+            temperature=0.3,
+            max_tokens=900,   # slightly more room for data-rich answers
+        )
+ 
+        answer      = response.choices[0].message.content
+        tokens_used = response.usage.total_tokens
+ 
+        logger.info(
+            f"[AI] kpi_enriched_ask() done | intent={result.detected_intent.value} | "
+            f"tokens={tokens_used}"
+        )
+ 
+        return {
+            "answer":            answer,
+            "model":             model,
+            "tokens_used":       tokens_used,
+            "question":          question,
+            "detected_intent":   result.detected_intent.value,
+            "kpi_context_used":  kpi_context_used,
+        }
+ 
+    except RateLimitError:
+        logger.warning("[AI] Rate limit hit.")
+        raise RuntimeError("AI service is temporarily rate-limited. Please wait and try again.")
+ 
+    except APIConnectionError:
+        logger.error("[AI] Connection error.")
+        raise RuntimeError("Could not reach the AI service. Check your internet connection.")
+ 
+    except APIStatusError as e:
+        logger.error(f"[AI] API error: {e.status_code} - {e.message}")
+        raise RuntimeError(f"AI service returned an error (status {e.status_code}).")
+ 

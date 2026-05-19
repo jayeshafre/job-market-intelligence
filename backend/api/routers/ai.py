@@ -20,6 +20,11 @@ from api.config import get_settings
 from api.schemas.ai import ChatRequest, ChatResponse, OrchestratedChatResponse
 from api.services.ai import ask_groq, orchestrated_ask
 from api.core.orchestrator import Intent
+from sqlalchemy.orm import Session
+from api.database import get_db
+from api.schemas.ai import KPIEnrichedChatResponse
+from api.services.ai import kpi_enriched_ask
+from fastapi import Depends
 
 logger = logging.getLogger(__name__)
 
@@ -149,6 +154,71 @@ def list_intents() -> dict:
         ]
     }
 
+# =============================================================================
+# POST /api/v1/ai/chat/v3  (Phase 3 — KPI-enriched, data-backed answers)
+# =============================================================================
+ 
+@router.post(
+    "/chat/v3",
+    response_model=KPIEnrichedChatResponse,
+    summary="Ask the AI Assistant (Phase 3 — KPI data-backed)",
+    description=(
+        "The most powerful AI endpoint. Detects intent, queries real platform "
+        "KPIs from the database, injects them into the prompt, then calls Groq. "
+        "Answers are grounded in your actual warehouse data (salaries, skills, "
+        "hiring trends, AI disruption scores). "
+        "Returns kpi_context_used=true when real data was injected."
+    ),
+)
+def chat_v3(
+    request: ChatRequest,
+    db: Session = Depends(get_db),
+) -> KPIEnrichedChatResponse:
+    """
+    Phase 3 KPI-enriched endpoint.
+ 
+    This endpoint does more work than v1/v2:
+      1. Detects intent
+      2. Queries your PostgreSQL warehouse for real KPIs
+      3. Injects KPIs into the system prompt
+      4. Calls Groq with enriched context
+ 
+    The db: Session = Depends(get_db) injects a database session.
+    This is the same pattern used in all your analytics routers.
+ 
+    Example request:
+        POST /api/v1/ai/chat/v3
+        {
+            "question": "Which skills are growing fastest in 2024?",
+            "context": "workforce intelligence"
+        }
+ 
+    Example response:
+        {
+            "answer": "Based on your platform data, the fastest growing skills
+                       in 2024 are: LLM Engineering [AI/ML] with 35.2% growth...",
+            "model": "llama-3.1-8b-instant",
+            "tokens_used": 487,
+            "question": "Which skills are growing fastest in 2024?",
+            "detected_intent": "skills",
+            "kpi_context_used": true
+        }
+    """
+    try:
+        result = kpi_enriched_ask(
+            question=request.question,
+            context=request.context,
+            db=db,
+        )
+        return KPIEnrichedChatResponse(**result)
+ 
+    except RuntimeError as e:
+        logger.error(f"[AI router] /chat/v3 error: {e}")
+        raise HTTPException(status_code=503, detail=str(e))
+ 
+    except Exception as e:
+        logger.exception(f"[AI router] /chat/v3 unexpected error: {e}")
+        raise HTTPException(status_code=500, detail="Unexpected error in AI service.")
 
 # =============================================================================
 # GET /api/v1/ai/health  (unchanged from Phase 1)
