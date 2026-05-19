@@ -4,15 +4,15 @@ import AppShell from '@/components/layout/AppShell'
 import PlaceholderPage from '@/components/shared/PlaceholderPage'
 
 // ─────────────────────────────────────────
-// Page imports
+// Page imports — add real pages here as
+// each phase is completed.
 //
-// Phase 1:  All pages use PlaceholderPage.
-// Phase 2+: Replace each PlaceholderPage
-//           with the real page component.
-//
-// Example replacement (Phase 2):
-//   import MainDashboard from '@/pages/dashboard/MainDashboard'
+// Phase 2 ✓  MainDashboard
+// Phase 3    Workforce, Salary, Skills, AI Impact
+// Phase 4    Chatbot pages
+// Phase 5    Forecasting, Recommendations, Data Explorer
 // ─────────────────────────────────────────
+import MainDashboard from '@/pages/dashboard/MainDashboard'
 
 export default function App() {
   return (
@@ -27,16 +27,8 @@ export default function App() {
           <Route element={<AppShell />}>
 
             {/* ── Dashboard routes ── */}
-            <Route
-              path="/dashboard"
-              element={
-                <PlaceholderPage
-                  title="Main Dashboard"
-                  phase="Phase 2"
-                  description="KPI cards, hiring trend chart, summary widgets. Built next."
-                />
-              }
-            />
+            {/* Phase 2 ✓ — real page */}
+            <Route path="/dashboard" element={<MainDashboard />} />
             <Route
               path="/dashboard/live"
               element={
