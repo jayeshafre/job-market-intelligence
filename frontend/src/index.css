@@ -1,0 +1,137 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────
+   Base reset & root setup
+───────────────────────────────────────── */
+@layer base {
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-base-900 text-text-primary font-sans;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    overflow: hidden;
+    /* layout controls scrolling */
+  }
+
+  /* Remove default button styles */
+  button {
+    cursor: pointer;
+    border: none;
+    background: none;
+    padding: 0;
+    font-family: inherit;
+  }
+
+  /* Thin scrollbar for sidebar & content areas */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-base-500 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-border-light;
+  }
+}
+
+/* ─────────────────────────────────────────
+   Reusable utility classes
+───────────────────────────────────────── */
+@layer components {
+
+  /* ── Nav item base ── */
+  .nav-item {
+    @apply flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-text-secondary cursor-pointer transition-all duration-150 ease-in-out select-none;
+  }
+
+  .nav-item:hover {
+    @apply bg-base-600 text-text-primary;
+  }
+
+  .nav-item.active {
+    background-color: theme('colors.accent.dim');
+    border: 1px solid theme('colors.accent.border');
+    @apply text-accent;
+  }
+
+  .nav-item .nav-label {
+    @apply text-[13px] font-normal transition-colors duration-150;
+  }
+
+  .nav-item.active .nav-label {
+    @apply font-medium;
+  }
+
+  .nav-item .nav-icon {
+    @apply w-5 flex-shrink-0 transition-colors duration-150;
+  }
+
+  /* ── Section heading inside sidebar ── */
+  .nav-section-label {
+    @apply font-mono text-[10px] font-medium uppercase tracking-widest text-text-muted px-2.5 mb-1;
+  }
+
+  /* ── Mode badge (pulsing top indicator) ── */
+  .mode-badge {
+    @apply flex items-center gap-1.5 mx-[18px] mt-3 px-2 py-[5px] rounded-md text-accent;
+    background-color: theme('colors.accent.dim');
+    border: 1px solid theme('colors.accent.border');
+  }
+
+  .mode-badge-dot {
+    @apply w-1.5 h-1.5 rounded-full bg-accent animate-pulse-dot flex-shrink-0;
+  }
+
+  .mode-badge-text {
+    @apply font-mono text-[10px] font-medium uppercase tracking-widest;
+  }
+
+  /* ── KPI card (used in dashboards, Phase 2) ── */
+  .kpi-card {
+    @apply bg-base-800 border border-border rounded-lg p-4 transition-all duration-200 hover:border-border-light;
+  }
+
+  .kpi-label {
+    @apply font-mono text-[10px] uppercase tracking-widest text-text-muted mb-1.5;
+  }
+
+  .kpi-value {
+    @apply font-mono text-2xl font-semibold text-text-primary tracking-tight;
+  }
+
+  .kpi-delta-positive {
+    @apply text-[11px] font-mono text-success mt-1;
+  }
+
+  .kpi-delta-negative {
+    @apply text-[11px] font-mono text-warning mt-1;
+  }
+
+  /* ── Page fade-in animation ── */
+  .page-enter {
+    @apply animate-fade-in;
+  }
+}
