@@ -1,32 +1,43 @@
 """
 api/routers/ai.py
 =================
-HTTP endpoints for the AI Assistant — Phase 2 update.
+HTTP endpoints for the AI Assistant — Phase 5 complete.
 
 Endpoints:
-  POST /api/v1/ai/chat      → Phase 1 (generic, kept for compatibility)
-  POST /api/v1/ai/chat/v2   → Phase 2 (orchestrated, intent-aware)
-  GET  /api/v1/ai/health    → Config check (unchanged)
-  GET  /api/v1/ai/intents   → NEW: lists all supported intents
+  POST /api/v1/ai/chat         → Phase 1: generic
+  POST /api/v1/ai/chat/v2      → Phase 2: intent-aware
+  POST /api/v1/ai/chat/v3      → Phase 3: KPI data-backed
+  POST /api/v1/ai/chat/v4      → Phase 4: + structured recommendations
+  GET  /api/v1/ai/executive-summary → Phase 5: full platform briefing
+  GET  /api/v1/ai/smart-alerts      → Phase 5: threshold-based alerts
+  GET  /api/v1/ai/intents      → metadata: all supported intents
+  GET  /api/v1/ai/health       → config check
 
 Place this file at: backend/api/routers/ai.py
 """
 
 import logging
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
 from api.config import get_settings
-from api.schemas.ai import ChatRequest, ChatResponse, OrchestratedChatResponse
-from api.services.ai import ask_groq, orchestrated_ask
 from api.core.orchestrator import Intent
-from sqlalchemy.orm import Session
+from api.core.executive_summary import generate_executive_summary
+from api.core.smart_alerts import run_smart_alerts
 from api.database import get_db
-from api.schemas.ai import KPIEnrichedChatResponse
-from api.services.ai import kpi_enriched_ask
-from fastapi import Depends
-from api.schemas.ai import RecommendationResponse
-from api.services.ai import recommendation_ask
+from api.schemas.ai import (
+    ChatRequest,
+    ChatResponse,
+    ExecutiveSummaryResponse,
+    KeyMetrics,
+    KPIEnrichedChatResponse,
+    OrchestratedChatResponse,
+    RecommendationResponse,
+    SmartAlert,
+    SmartAlertsResponse,
+)
+from api.services.ai import ask_groq, kpi_enriched_ask, orchestrated_ask, recommendation_ask
 
 logger = logging.getLogger(__name__)
 
@@ -34,32 +45,28 @@ router = APIRouter()
 
 
 # =============================================================================
-# POST /api/v1/ai/chat  (Phase 1 — kept unchanged)
+# POST /api/v1/ai/chat  (Phase 1)
 # =============================================================================
 
 @router.post(
     "/chat",
     response_model=ChatResponse,
     summary="Ask the AI Assistant (Phase 1 — generic)",
-    description=(
-        "Generic AI chat endpoint. Uses a single system prompt for all questions. "
-        "Kept for backward compatibility. Use /chat/v2 for better answers."
-    ),
+    description="Generic AI chat. Single system prompt. Kept for backward compatibility.",
 )
 def chat(request: ChatRequest) -> ChatResponse:
     try:
         result = ask_groq(question=request.question, context=request.context)
         return ChatResponse(**result)
     except RuntimeError as e:
-        logger.error(f"[AI router] /chat error: {e}")
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
-        logger.exception(f"[AI router] /chat unexpected error: {e}")
+        logger.exception(f"[AI router] /chat error: {e}")
         raise HTTPException(status_code=500, detail="Unexpected error in AI service.")
 
 
 # =============================================================================
-# POST /api/v1/ai/chat/v2  (Phase 2 — orchestrated)
+# POST /api/v1/ai/chat/v2  (Phase 2)
 # =============================================================================
 
 @router.post(
@@ -67,108 +74,32 @@ def chat(request: ChatRequest) -> ChatResponse:
     response_model=OrchestratedChatResponse,
     summary="Ask the AI Assistant (Phase 2 — intent-aware)",
     description=(
-        "Orchestrated AI chat endpoint. Detects the question intent "
-        "(salary / skills / hiring / ai_disruption / forecast / general) "
-        "and uses a specialized system prompt for each intent. "
-        "Produces more focused, expert-level answers than /chat."
+        "Detects question intent (salary / skills / hiring / ai_disruption / "
+        "forecast / general) and uses a specialized expert system prompt per intent."
     ),
 )
 def chat_v2(request: ChatRequest) -> OrchestratedChatResponse:
-    """
-    Phase 2 orchestrated endpoint.
-
-    Example request:
-        POST /api/v1/ai/chat/v2
-        {
-            "question": "Which jobs are safest from AI automation?",
-            "context": "workforce intelligence"
-        }
-
-    Example response:
-        {
-            "answer": "Jobs with the lowest automation risk include...",
-            "model": "llama-3.1-8b-instant",
-            "tokens_used": 342,
-            "question": "Which jobs are safest from AI automation?",
-            "detected_intent": "ai_disruption"
-        }
-    """
     try:
         result = orchestrated_ask(question=request.question, context=request.context)
         return OrchestratedChatResponse(**result)
     except RuntimeError as e:
-        logger.error(f"[AI router] /chat/v2 error: {e}")
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
-        logger.exception(f"[AI router] /chat/v2 unexpected error: {e}")
+        logger.exception(f"[AI router] /chat/v2 error: {e}")
         raise HTTPException(status_code=500, detail="Unexpected error in AI service.")
 
 
 # =============================================================================
-# GET /api/v1/ai/intents  (NEW in Phase 2)
+# POST /api/v1/ai/chat/v3  (Phase 3)
 # =============================================================================
 
-@router.get(
-    "/intents",
-    summary="List all supported question intents",
-    description=(
-        "Returns all intent categories the orchestrator can detect. "
-        "Useful for the frontend to show intent labels and icons."
-    ),
-)
-def list_intents() -> dict:
-    """
-    Returns all supported intents with descriptions.
-    No Groq call — pure metadata endpoint.
-    """
-    return {
-        "intents": [
-            {
-                "intent": Intent.SALARY.value,
-                "description": "Questions about salaries, pay, compensation, earnings",
-                "example": "What is the average salary for a Data Scientist in the US?",
-            },
-            {
-                "intent": Intent.SKILLS.value,
-                "description": "Questions about skills, technologies, learning, demand",
-                "example": "Which skills are growing fastest in 2024?",
-            },
-            {
-                "intent": Intent.HIRING.value,
-                "description": "Questions about hiring trends, job postings, recruitment",
-                "example": "Which industries are hiring the most right now?",
-            },
-            {
-                "intent": Intent.AI_DISRUPTION.value,
-                "description": "Questions about automation risk, AI disruption, job safety",
-                "example": "Which jobs are safest from AI automation?",
-            },
-            {
-                "intent": Intent.FORECAST.value,
-                "description": "Questions about future trends, predictions, forecasts",
-                "example": "What will the demand for ML engineers look like in 2026?",
-            },
-            {
-                "intent": Intent.GENERAL.value,
-                "description": "General workforce analytics questions (fallback)",
-                "example": "Tell me about the global job market in 2024.",
-            },
-        ]
-    }
-
-# =============================================================================
-# POST /api/v1/ai/chat/v3  (Phase 3 — KPI-enriched, data-backed answers)
-# =============================================================================
- 
 @router.post(
     "/chat/v3",
     response_model=KPIEnrichedChatResponse,
     summary="Ask the AI Assistant (Phase 3 — KPI data-backed)",
     description=(
-        "The most powerful AI endpoint. Detects intent, queries real platform "
-        "KPIs from the database, injects them into the prompt, then calls Groq. "
-        "Answers are grounded in your actual warehouse data (salaries, skills, "
-        "hiring trends, AI disruption scores). "
+        "Intent detection + real warehouse KPIs injected into the prompt. "
+        "Answers grounded in your actual PostgreSQL data. "
         "Returns kpi_context_used=true when real data was injected."
     ),
 )
@@ -176,36 +107,6 @@ def chat_v3(
     request: ChatRequest,
     db: Session = Depends(get_db),
 ) -> KPIEnrichedChatResponse:
-    """
-    Phase 3 KPI-enriched endpoint.
- 
-    This endpoint does more work than v1/v2:
-      1. Detects intent
-      2. Queries your PostgreSQL warehouse for real KPIs
-      3. Injects KPIs into the system prompt
-      4. Calls Groq with enriched context
- 
-    The db: Session = Depends(get_db) injects a database session.
-    This is the same pattern used in all your analytics routers.
- 
-    Example request:
-        POST /api/v1/ai/chat/v3
-        {
-            "question": "Which skills are growing fastest in 2024?",
-            "context": "workforce intelligence"
-        }
- 
-    Example response:
-        {
-            "answer": "Based on your platform data, the fastest growing skills
-                       in 2024 are: LLM Engineering [AI/ML] with 35.2% growth...",
-            "model": "llama-3.1-8b-instant",
-            "tokens_used": 487,
-            "question": "Which skills are growing fastest in 2024?",
-            "detected_intent": "skills",
-            "kpi_context_used": true
-        }
-    """
     try:
         result = kpi_enriched_ask(
             question=request.question,
@@ -213,28 +114,23 @@ def chat_v3(
             db=db,
         )
         return KPIEnrichedChatResponse(**result)
- 
     except RuntimeError as e:
-        logger.error(f"[AI router] /chat/v3 error: {e}")
         raise HTTPException(status_code=503, detail=str(e))
- 
     except Exception as e:
-        logger.exception(f"[AI router] /chat/v3 unexpected error: {e}")
+        logger.exception(f"[AI router] /chat/v3 error: {e}")
         raise HTTPException(status_code=500, detail="Unexpected error in AI service.")
 
+
 # =============================================================================
-# POST /api/v1/ai/chat/v4  (Phase 4 — recommendations)
+# POST /api/v1/ai/chat/v4  (Phase 4)
 # =============================================================================
- 
+
 @router.post(
     "/chat/v4",
     response_model=RecommendationResponse,
     summary="Ask the AI Assistant (Phase 4 — with recommendations)",
     description=(
-        "The most complete AI endpoint. Detects intent, queries real KPIs, "
-        "generates a text answer, AND returns 3 structured actionable "
-        "recommendations as typed objects. "
-        "Recommendations are rendered as cards on the frontend. "
+        "Intent + KPI data + 3 structured actionable recommendations as typed objects. "
         "Returns recommendations_parsed=true when JSON extraction succeeded."
     ),
 )
@@ -242,37 +138,6 @@ def chat_v4(
     request: ChatRequest,
     db: Session = Depends(get_db),
 ) -> RecommendationResponse:
-    """
-    Phase 4 recommendation endpoint.
- 
-    Example request:
-        POST /api/v1/ai/chat/v4
-        {
-            "question": "Which skills should I learn to maximize salary in 2024?",
-            "context": "career optimization"
-        }
- 
-    Example response:
-        {
-            "answer": "Based on your platform data, to maximize salary...",
-            "model": "llama-3.1-8b-instant",
-            "tokens_used": 891,
-            "question": "Which skills should I learn to maximize salary in 2024?",
-            "detected_intent": "skills",
-            "kpi_context_used": true,
-            "recommendations": [
-                {
-                    "title": "Master Prompt Engineering for AI roles",
-                    "category": "skill",
-                    "rationale": "Highest growth skill at 149% with direct salary impact...",
-                    "priority": "high",
-                    "estimated_impact": "+35% salary premium over non-AI engineers"
-                },
-                ...
-            ],
-            "recommendations_parsed": true
-        }
-    """
     try:
         result = recommendation_ask(
             question=request.question,
@@ -280,18 +145,152 @@ def chat_v4(
             db=db,
         )
         return RecommendationResponse(**result)
- 
     except RuntimeError as e:
-        logger.error(f"[AI router] /chat/v4 error: {e}")
         raise HTTPException(status_code=503, detail=str(e))
- 
     except Exception as e:
-        logger.exception(f"[AI router] /chat/v4 unexpected error: {e}")
+        logger.exception(f"[AI router] /chat/v4 error: {e}")
         raise HTTPException(status_code=500, detail="Unexpected error in AI service.")
- 
- 
+
+
 # =============================================================================
-# GET /api/v1/ai/health  (unchanged from Phase 1)
+# GET /api/v1/ai/executive-summary  (Phase 5)
+# =============================================================================
+
+@router.get(
+    "/executive-summary",
+    response_model=ExecutiveSummaryResponse,
+    summary="Generate executive intelligence briefing (Phase 5)",
+    description=(
+        "Queries all 4 KPI domains (hiring, salary, skills, AI disruption), "
+        "assembles a full platform snapshot, and asks Groq to write a "
+        "boardroom-ready executive briefing. "
+        "Returns the summary prose + structured key_metrics for the UI header strip. "
+        "No question needed — call it and get a full platform intelligence report."
+    ),
+)
+def executive_summary(
+    db: Session = Depends(get_db),
+) -> ExecutiveSummaryResponse:
+    """
+    Executive summary endpoint — no request body needed.
+
+    Example response:
+        {
+            "summary": "The global job market in 2024 is defined by an accelerating
+                        bifurcation between AI-augmented roles and automation-exposed
+                        ones. With 149% YoY growth in Prompt Engineering demand...",
+            "key_metrics": {
+                "total_postings": 1250000,
+                "global_avg_salary": 78432.50,
+                "remote_pct": 47.3,
+                "fastest_skill": "Prompt Engineering",
+                "fastest_skill_growth": 149.03,
+                "highest_risk_role": "Data Entry Clerk",
+                "safest_career": "Clinical Psychologist"
+            },
+            "generated_at": "2024-01-15T09:30:00Z",
+            "tokens_used": 521,
+            "model": "llama-3.1-8b-instant"
+        }
+    """
+    try:
+        result = generate_executive_summary(db)
+        return ExecutiveSummaryResponse(
+            summary=result["summary"],
+            key_metrics=KeyMetrics(**result["key_metrics"]),
+            generated_at=result["generated_at"],
+            tokens_used=result["tokens_used"],
+            model=result["model"],
+        )
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        logger.exception(f"[AI router] /executive-summary error: {e}")
+        raise HTTPException(status_code=500, detail="Unexpected error generating summary.")
+
+
+# =============================================================================
+# GET /api/v1/ai/smart-alerts  (Phase 5)
+# =============================================================================
+
+@router.get(
+    "/smart-alerts",
+    response_model=SmartAlertsResponse,
+    summary="Run smart alert scan (Phase 5)",
+    description=(
+        "Scans all KPI data against predefined thresholds and returns typed alerts. "
+        "No LLM call — pure deterministic data analysis. Always fast, always fresh. "
+        "Alerts are sorted: critical → warning → info. "
+        "Severity: critical (>80 risk / >100% growth), "
+        "warning (>65 risk / >50% growth), info (notable trends)."
+    ),
+)
+def smart_alerts(
+    db: Session = Depends(get_db),
+) -> SmartAlertsResponse:
+    """
+    Smart alerts endpoint — no request body needed.
+
+    Example response:
+        {
+            "alerts": [
+                {
+                    "severity": "critical",
+                    "category": "skill_surge",
+                    "title": "Explosive skill surge: Prompt Engineering",
+                    "message": "Prompt Engineering has grown 149.0% YoY...",
+                    "data_point": 149.03,
+                    "entity": "Prompt Engineering"
+                },
+                ...
+            ],
+            "alert_count": 12,
+            "critical_count": 3,
+            "warning_count": 7,
+            "info_count": 2,
+            "scanned_at": "2024-01-15T09:30:00Z"
+        }
+    """
+    try:
+        result = run_smart_alerts(db)
+        alerts = [SmartAlert(**a) for a in result["alerts"]]
+        return SmartAlertsResponse(
+            alerts=alerts,
+            alert_count=result["alert_count"],
+            critical_count=result["critical_count"],
+            warning_count=result["warning_count"],
+            info_count=result["info_count"],
+            scanned_at=result["scanned_at"],
+        )
+    except Exception as e:
+        logger.exception(f"[AI router] /smart-alerts error: {e}")
+        raise HTTPException(status_code=500, detail="Unexpected error running alert scan.")
+
+
+# =============================================================================
+# GET /api/v1/ai/intents  (Phase 2 — unchanged)
+# =============================================================================
+
+@router.get(
+    "/intents",
+    summary="List all supported question intents",
+    description="Returns all intent categories the orchestrator can detect.",
+)
+def list_intents() -> dict:
+    return {
+        "intents": [
+            {"intent": Intent.SALARY.value,        "description": "Questions about salaries, pay, compensation",         "example": "What is the average salary for a Data Scientist?"},
+            {"intent": Intent.SKILLS.value,         "description": "Questions about skills, technologies, demand",         "example": "Which skills are growing fastest in 2024?"},
+            {"intent": Intent.HIRING.value,         "description": "Questions about hiring trends, job postings",          "example": "Which industries are hiring the most right now?"},
+            {"intent": Intent.AI_DISRUPTION.value,  "description": "Questions about automation risk, AI disruption",       "example": "Which jobs are safest from AI automation?"},
+            {"intent": Intent.FORECAST.value,       "description": "Questions about future trends, predictions",           "example": "What will ML engineer demand look like in 2026?"},
+            {"intent": Intent.GENERAL.value,        "description": "General workforce analytics questions (fallback)",     "example": "Tell me about the global job market in 2024."},
+        ]
+    }
+
+
+# =============================================================================
+# GET /api/v1/ai/health  (Phase 1 — unchanged)
 # =============================================================================
 
 @router.get(
@@ -305,6 +304,6 @@ def ai_health() -> dict:
     return {
         "ai_service": "groq",
         "configured": configured,
-        "model": settings.GROQ_MODEL,
-        "status": "ready" if configured else "missing_api_key",
+        "model":      settings.GROQ_MODEL,
+        "status":     "ready" if configured else "missing_api_key",
     }

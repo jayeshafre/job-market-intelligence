@@ -122,3 +122,74 @@ class RecommendationResponse(BaseModel):
     recommendations_parsed: bool = Field(
         description="True if recommendations were successfully extracted from response."
     )
+
+# =============================================================================
+# PHASE 5 — EXECUTIVE SUMMARY SCHEMAS
+# =============================================================================
+ 
+class KeyMetrics(BaseModel):
+    """
+    The headline KPI strip shown at the top of the executive summary page.
+    These are the 7 most important numbers from across the platform.
+    """
+    total_postings:       int   = Field(description="Total global job postings in 2024.")
+    global_avg_salary:    float = Field(description="Global average salary USD in 2024.")
+    remote_pct:           float = Field(description="Percentage of postings that are remote.")
+    fastest_skill:        str   = Field(description="Name of the fastest growing skill.")
+    fastest_skill_growth: float = Field(description="YoY growth % of the fastest skill.")
+    highest_risk_role:    str   = Field(description="Role with highest automation risk score.")
+    safest_career:        str   = Field(description="Role with highest future-safe score.")
+ 
+ 
+class ExecutiveSummaryResponse(BaseModel):
+    """
+    Response from GET /api/v1/ai/executive-summary
+ 
+    summary:     The LLM-generated executive briefing prose (250-350 words).
+    key_metrics: Structured headline numbers for the frontend KPI strip.
+    generated_at: ISO timestamp — shows freshness of the report.
+    tokens_used: Groq token consumption for this summary.
+    model:       The model that wrote the summary.
+    """
+    summary:      str         = Field(description="Executive intelligence briefing prose.")
+    key_metrics:  KeyMetrics  = Field(description="Headline KPI numbers for the summary page.")
+    generated_at: str         = Field(description="ISO 8601 timestamp of generation.")
+    tokens_used:  int
+    model:        str
+ 
+ 
+# =============================================================================
+# PHASE 5 — SMART ALERT SCHEMAS
+# =============================================================================
+ 
+class SmartAlert(BaseModel):
+    """
+    A single smart alert fired by the threshold scanner.
+    Rendered as a notification card on the frontend.
+    """
+    severity:   str   = Field(description="critical | warning | info")
+    category:   str   = Field(description="skill_surge | automation_risk | salary_shift | remote_shift | hiring_surge")
+    title:      str   = Field(description="Short alert headline.")
+    message:    str   = Field(description="Full alert explanation with data point context.")
+    data_point: float = Field(description="The raw number that triggered this alert.")
+    entity:     str   = Field(description="The skill / role / industry that triggered the alert.")
+ 
+ 
+class SmartAlertsResponse(BaseModel):
+    """
+    Response from GET /api/v1/ai/smart-alerts
+ 
+    alerts:         Full list of fired alerts, sorted critical → warning → info.
+    alert_count:    Total alerts fired.
+    critical_count: Number of critical severity alerts.
+    warning_count:  Number of warning severity alerts.
+    info_count:     Number of info severity alerts.
+    scanned_at:     ISO timestamp of when the scan ran.
+    """
+    alerts:         list[SmartAlert] = Field(description="All fired alerts sorted by severity.")
+    alert_count:    int
+    critical_count: int
+    warning_count:  int
+    info_count:     int
+    scanned_at:     str = Field(description="ISO 8601 timestamp of the scan.")
+ 
