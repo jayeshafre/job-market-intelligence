@@ -64,6 +64,11 @@ class Settings(BaseSettings):
     DB_POOL_TIMEOUT: int = 30
     DB_POOL_RECYCLE: int = 1800
 
+    # ── Redis ─────────────────────────────────────────────────────────────────
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
+    REDIS_TTL_SECONDS: int = 3600  # conversations expire after 1 hour
+
     # ── Pydantic Settings Config ─────────────────────────────────────────
     model_config = SettingsConfigDict(
         env_file=ENV_FILE,

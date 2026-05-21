@@ -1,0 +1,30 @@
+AI Disruption & Workforce Transformation Analysis 2024
+
+Automation risk has accelerated across routine cognitive and manual roles.
+
+Critical risk roles (>80 automation risk score):
+- Data Entry Clerk: 94.10/100 — highest risk on platform
+- Administrative Assistant: 87.35/100
+- Warehouse Operator: 82.04/100
+- Customer Support Agent: 81.30/100
+
+These roles share common characteristics: repetitive tasks, rule-based 
+decision making, and high data volume processing — all AI strengths.
+
+Future-safe roles scoring above 75/100 safety score:
+- Machine Learning Engineer
+- AI Research Scientist
+- Research Scientist
+- Clinical Psychologist
+- Creative Director
+
+The pattern is clear: roles requiring creativity, empathy, complex 
+judgment, and AI expertise itself are most protected from automation.
+
+Industry disruption outlook: Manufacturing and Administrative sectors 
+face the highest workforce transformation pressure. Healthcare and 
+Creative industries show the strongest resilience.
+
+Strategic recommendation: Workers in high-risk roles should prioritize 
+adjacent skill acquisition in AI tooling, data analysis, or customer 
+experience design — areas where human judgment remains essential.

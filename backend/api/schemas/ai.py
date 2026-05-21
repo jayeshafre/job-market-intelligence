@@ -192,4 +192,97 @@ class SmartAlertsResponse(BaseModel):
     warning_count:  int
     info_count:     int
     scanned_at:     str = Field(description="ISO 8601 timestamp of the scan.")
+
+# =============================================================================
+# PHASE 6 — RAG RESPONSE SCHEMA
+# =============================================================================
+ 
+class RetrievedChunk(BaseModel):
+    """A single document chunk retrieved from ChromaDB."""
+    text:        str   = Field(description="The retrieved text chunk.")
+    doc_id:      str   = Field(description="Source document identifier.")
+    similarity:  float = Field(description="Cosine similarity score (0–1). Higher = more relevant.")
+ 
+ 
+class RAGChatResponse(BaseModel):
+    """
+    Response from POST /api/v1/ai/chat/v5
+ 
+    Adds RAG-specific fields:
+      retrieved_chunks:  The document chunks injected into the prompt.
+      rag_used:          True if ChromaDB returned relevant chunks.
+      chunks_retrieved:  How many chunks were retrieved.
+    """
+    answer:           str               = Field(description="The AI-generated answer.")
+    model:            str
+    tokens_used:      int
+    question:         str
+    detected_intent:  str
+    kpi_context_used: bool
+    rag_used:         bool              = Field(description="True if knowledge base chunks were retrieved.")
+    chunks_retrieved: int               = Field(description="Number of document chunks retrieved.")
+    retrieved_chunks: list[RetrievedChunk] = Field(
+        default=[],
+        description="The actual chunks retrieved — useful for debugging and frontend citation.",
+    )
+    recommendations:         list[Any] = Field(default=[])
+    recommendations_parsed:  bool      = Field(default=False)
+
+# =============================================================================
+# PHASE 7 — MEMORY SCHEMAS
+# =============================================================================
+ 
+class MemoryChatRequest(BaseModel):
+    """
+    Request for POST /api/v1/ai/chat/v6 (memory-enabled endpoint).
+ 
+    Adds session_id to the standard ChatRequest.
+    If session_id is None, a new session is created automatically.
+    Pass the returned session_id in all subsequent requests to maintain context.
+    """
+    question:   str = Field(
+        ...,
+        min_length=5,
+        max_length=500,
+        description="The user's question.",
+        examples=["Which jobs are safest from AI?"],
+    )
+    context: str = Field(
+        default="global job market and workforce analytics",
+        max_length=200,
+    )
+    session_id: str | None = Field(
+        default=None,
+        description=(
+            "Conversation session ID. Pass None to start a new session. "
+            "Reuse the returned session_id to continue the conversation."
+        ),
+    )
+ 
+ 
+class MemoryChatResponse(BaseModel):
+    """
+    Response from POST /api/v1/ai/chat/v6
+ 
+    Adds memory-specific fields:
+      session_id:    Use this in your next request to continue the conversation.
+      turn_count:    How many turns have happened in this session.
+      memory_used:   True if previous conversation history was injected.
+      is_new_session: True if this was the first message in the session.
+    """
+    answer:           str
+    model:            str
+    tokens_used:      int
+    question:         str
+    detected_intent:  str
+    kpi_context_used: bool
+    rag_used:         bool
+    chunks_retrieved: int
+    recommendations:        list[Any] = Field(default=[])
+    recommendations_parsed: bool      = Field(default=False)
+    # Memory-specific fields
+    session_id:     str  = Field(description="Use this session_id in your next request.")
+    turn_count:     int  = Field(description="Number of completed turns in this session.")
+    memory_used:    bool = Field(description="True if conversation history was injected.")
+    is_new_session: bool = Field(description="True if this was the first message.")
  

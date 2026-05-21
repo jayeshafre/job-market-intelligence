@@ -12,11 +12,12 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      // Proxy all /api/* requests to the FastAPI backend
+      // Forward /api/v1/* directly to FastAPI on :8000
+      // Backend prefix is /api/v1 (see main.py include_router calls)
+      // No path rewriting needed — paths are forwarded verbatim
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
       },
     },
   },

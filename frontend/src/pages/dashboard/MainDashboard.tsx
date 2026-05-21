@@ -4,7 +4,7 @@ import {
 import { useDashboardStats } from '@/hooks/useDashboardStats'
 import KpiCard, { fmtNumber, fmtUSD, fmtPct } from '@/components/dashboard/KpiCard'
 import HiringTrendChart from '@/components/dashboard/HiringTrendChart'
-import TopIndustriesWidget from '@/components/dashboard/TopIndustriesWidget'
+//import TopIndustriesWidget from '@/components/dashboard/TopIndustriesWidget'
 import TopCountriesWidget from '@/components/dashboard/TopCountriesWidget'
 import RemoteSplitWidget from '@/components/dashboard/RemoteSplitWidget'
 
@@ -128,10 +128,10 @@ export default function MainDashboard() {
 
       {/* ── Row 3: Top industries + Top countries ── */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        <TopIndustriesWidget
+        {/* <TopIndustriesWidget
           data={data?.topIndustries ?? []}
           isLoading={isLoading}
-        />
+        /> */}
         <TopCountriesWidget
           data={data?.topCountries ?? []}
           isLoading={isLoading}

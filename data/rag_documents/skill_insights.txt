@@ -1,0 +1,25 @@
+Skill Demand Intelligence Report 2024
+
+AI/ML skills dominate the 2024 growth rankings with unprecedented velocity.
+
+Prompt Engineering leads all skills at 149.03% YoY growth — the fastest 
+skill adoption ever recorded in this platform. Organizations are hiring 
+prompt engineers at every level from junior to principal.
+
+Large Language Models (136.27%), Generative AI (121.45%), and OpenAI API 
+(115.62%) follow, forming the core AI stack employers are hiring for in 2024.
+
+Vector Databases at 97.29% growth signals that RAG-based applications 
+are entering mainstream enterprise adoption.
+
+LangChain (82.61%) and Hugging Face Transformers (66.45%) round out the 
+AI framework layer — both are now considered foundational skills for 
+AI engineering roles.
+
+Traditional skills still in strong demand: Python, SQL, Cloud Computing, 
+and Data Analysis maintain high absolute demand scores despite lower 
+growth rates, as they form the foundation beneath AI skills.
+
+Skill combination with highest salary premium in 2024:
+Python + SQL + Machine Learning + Cloud = Senior ML Engineer profile
+commanding $96,855 average salary.
