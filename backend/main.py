@@ -24,6 +24,7 @@ from api.schemas import ErrorResponse, HealthResponse
 from api.routers import workforce, salary, skills, ai_impact
 from api.routers import analytics, forecast
 from api.routers import ai
+from api.routers import ml
 
 settings = get_settings()
 
@@ -154,3 +155,9 @@ app.include_router(forecast.router,  prefix="/api/v1/forecast",   tags=["Forecas
 # =============================================================================
  
 app.include_router(ai.router, prefix="/api/v1/ai", tags=["AI Assistant"])
+
+# =============================================================================
+# ML ENGINE — Phase 8
+# =============================================================================
+ 
+app.include_router(ml.router, prefix="/api/v1/ml", tags=["ML Engine"])
