@@ -1,89 +1,74 @@
 // ─────────────────────────────────────────
-// dashboard.ts — Frontend types
+// types/dashboard.ts
 //
-// These mirror the Pydantic schemas in:
-//   backend/api/schemas/analytics.py
-//   backend/api/schemas/workforce.py
-//   backend/api/schemas/salary.py
+// AUDIT FIX: Removed all invented types that
+// didn't match real backend schemas.
+//
+// Real per-domain types live in:
+//   types/workforce.ts  ← workforce.py schema
+//   types/salary.ts     ← salary.py schema
+//   types/skills.ts     ← skills.py schema
+//   types/aiImpact.ts   ← ai_impact.py schema
+//
+// This file now only contains:
+//   1. The shared FetchStatus/FetchState helpers
+//   2. The KpiSummary type — derived client-side
+//      from real workforce + salary data since
+//      the backend has no /analytics/summary yet.
+//   3. The DashboardData aggregate type
 // ─────────────────────────────────────────
 
-// ── Generic API wrapper ──────────────────
+// Re-export real types used by dashboard widgets
+// so existing imports keep working.
+export type { CountryHiringStats as CountryStat }   from './workforce'
+export type { IndustryHiringStats as IndustryStat } from './workforce'
+export type { RemoteBreakdown as RemoteSplit }       from './workforce'
+export type { HiringTrendPoint }                     from './workforce'
+export type { HiringTrendPoint as HiringTrendData }  from './workforce'
 
-export interface ApiResponse<T> {
-  data: T
-  status: 'success' | 'error'
-  message?: string
-}
-
-// ── KPI Summary (Main Dashboard) ─────────
-// Matches: GET /analytics/summary
+// ── KPI Summary ───────────────────────────
+// Derived client-side in analyticsService.ts
+// by combining data from:
+//   GET /api/v1/workforce/hiring-trends   → total_postings, remote_postings
+//   GET /api/v1/workforce/by-country      → total_countries
+//   GET /api/v1/workforce/by-industry     → total_industries
+//   GET /api/v1/salary/trends             → avg_salary_usd, salary_growth_pct
+//   GET /api/v1/ai-impact/trends          → avg_automation_risk
+//   GET /api/v1/skills/top-growing        → top skill name
 
 export interface KpiSummary {
-  total_job_postings: number        // e.g. 2_400_000
-  avg_salary_usd: number            // e.g. 94000
-  total_countries: number           // e.g. 42
-  total_industries: number          // e.g. 18
-  top_growing_skill: string         // e.g. "AI/ML Engineering"
-  ai_disruption_index: number       // e.g. 0.38  (0–1 scale)
-  yoy_job_growth_pct: number        // e.g. 12.3
-  yoy_salary_growth_pct: number     // e.g. 5.7
+  total_job_postings:    number        // from hiring-trends: latest year total_postings
+  avg_salary_usd:        number        // from salary/trends: latest avg_salary_usd
+  total_countries:       number        // from workforce/by-country: array length
+  total_industries:      number        // from workforce/by-industry: array length
+  top_growing_skill:     string        // from skills/top-growing: first item skill_name
+  ai_disruption_index:   number        // from ai-impact/trends: latest avg_automation_risk
+  yoy_job_growth_pct:    number        // computed: (latest - prev) / prev * 100
+  yoy_salary_growth_pct: number        // from salary/trends: latest salary_growth_pct
 }
 
-// ── Hiring Trend (line chart) ─────────────
-// Matches: GET /workforce/hiring-trend
+// ── Dashboard aggregate ───────────────────
+// All data the Main Dashboard page needs
 
-export interface HiringTrendPoint {
-  year: number                      // e.g. 2020
-  job_postings: number              // e.g. 1_200_000
-  remote_postings: number           // e.g. 340_000
-}
-
-export type HiringTrendData = HiringTrendPoint[]
-
-// ── Top Industries ────────────────────────
-// Matches: GET /analytics/top-industries
-
-export interface IndustryStat {
-  industry_name: string
-  job_count: number
-  growth_pct: number
-}
-
-// ── Top Countries ─────────────────────────
-// Matches: GET /workforce/top-countries
-
-export interface CountryStat {
-  country_name: string
-  job_count: number
-  avg_salary_usd: number
-}
-
-// ── Remote Work Split ─────────────────────
-// Matches: GET /workforce/remote-split
-
-export interface RemoteSplit {
-  remote_pct: number
-  hybrid_pct: number
-  onsite_pct: number
-}
-
-// ── Dashboard page aggregate ──────────────
-// All data the Main Dashboard needs
+import type { HiringTrendPoint }    from './workforce'
+import type { CountryHiringStats }  from './workforce'
+import type { IndustryHiringStats } from './workforce'
+import type { RemoteBreakdown }     from './workforce'
 
 export interface DashboardData {
-  kpi: KpiSummary
-  hiringTrend: HiringTrendData
-  topIndustries: IndustryStat[]
-  topCountries: CountryStat[]
-  remoteSplit: RemoteSplit
+  kpi:            KpiSummary
+  hiringTrend:    HiringTrendPoint[]      // total_postings + remote_postings per year
+  topIndustries:  IndustryHiringStats[]   // real backend fields: total_postings, ai_adoption_index
+  topCountries:   CountryHiringStats[]    // real backend fields: total_postings, avg_salary_usd
+  remoteSplit:    RemoteBreakdown         // real backend fields: remote_pct, remote_postings, onsite_postings
 }
 
-// ── Fetch state helper ────────────────────
+// ── Shared fetch state helpers ────────────
 
 export type FetchStatus = 'idle' | 'loading' | 'success' | 'error'
 
 export interface FetchState<T> {
-  data: T | null
+  data:   T | null
   status: FetchStatus
-  error: string | null
+  error:  string | null
 }

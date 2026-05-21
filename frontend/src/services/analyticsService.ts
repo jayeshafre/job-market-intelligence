@@ -1,126 +1,184 @@
 import api from './api'
-import type {
-  KpiSummary,
-  HiringTrendData,
-  IndustryStat,
-  CountryStat,
-  RemoteSplit,
-  DashboardData,
-} from '@/types/dashboard'
+import type { KpiSummary, DashboardData } from '@/types/dashboard'
+import type { HiringTrendPoint, CountryHiringStats, IndustryHiringStats, RemoteBreakdown } from '@/types/workforce'
+import type { SalaryTrendPoint } from '@/types/salary'
+import type { GrowingSkill } from '@/types/skills'
+import type { DisruptionTrend } from '@/types/aiImpact'
 
 // ─────────────────────────────────────────
 // analyticsService.ts
 //
-// Maps to FastAPI routers:
-//   /analytics  → backend/api/routers/analytics.py
-//   /workforce  → backend/api/routers/workforce.py
+// AUDIT FIX: Removed /analytics/summary (doesn't exist).
+// AUDIT FIX: All types now use real backend field names.
+// AUDIT FIX: KpiSummary is now derived from 5 real endpoints.
+// AUDIT FIX: No mock data. If backend is unreachable the
+//            error bubbles up to the hook → shown in UI.
 //
-// Each function has a MOCK FALLBACK so the
-// frontend works even when the backend is off.
-// Remove mock blocks once your API is ready.
+// Data flow:
+//   Backend endpoints → unwrap {success,data} → typed TS → KpiSummary
 // ─────────────────────────────────────────
 
-// ── Mock data (remove when API is ready) ─
+// ── Envelope unwrapper ────────────────────
+// Every FastAPI response is: { success, data, message, count }
 
-const MOCK_KPI: KpiSummary = {
-  total_job_postings: 2_431_800,
-  avg_salary_usd: 94_200,
-  total_countries: 42,
-  total_industries: 18,
-  top_growing_skill: 'AI/ML Engineering',
-  ai_disruption_index: 0.38,
-  yoy_job_growth_pct: 12.3,
-  yoy_salary_growth_pct: 5.7,
-}
-
-const MOCK_TREND: HiringTrendData = [
-  { year: 2019, job_postings: 980_000,   remote_postings: 88_000  },
-  { year: 2020, job_postings: 1_050_000, remote_postings: 380_000 },
-  { year: 2021, job_postings: 1_420_000, remote_postings: 510_000 },
-  { year: 2022, job_postings: 1_780_000, remote_postings: 490_000 },
-  { year: 2023, job_postings: 2_100_000, remote_postings: 560_000 },
-  { year: 2024, job_postings: 2_431_800, remote_postings: 610_000 },
-]
-
-const MOCK_INDUSTRIES: IndustryStat[] = [
-  { industry_name: 'Technology',       job_count: 580_000, growth_pct: 18.4 },
-  { industry_name: 'Healthcare',       job_count: 420_000, growth_pct: 14.1 },
-  { industry_name: 'Finance',          job_count: 310_000, growth_pct: 9.8  },
-  { industry_name: 'Education',        job_count: 210_000, growth_pct: 7.2  },
-  { industry_name: 'Manufacturing',    job_count: 190_000, growth_pct: 3.1  },
-]
-
-const MOCK_COUNTRIES: CountryStat[] = [
-  { country_name: 'United States', job_count: 820_000, avg_salary_usd: 118_000 },
-  { country_name: 'United Kingdom', job_count: 220_000, avg_salary_usd: 85_000  },
-  { country_name: 'India',          job_count: 310_000, avg_salary_usd: 28_000  },
-  { country_name: 'Germany',        job_count: 180_000, avg_salary_usd: 92_000  },
-  { country_name: 'Canada',         job_count: 140_000, avg_salary_usd: 98_000  },
-]
-
-const MOCK_REMOTE: RemoteSplit = {
-  remote_pct: 28,
-  hybrid_pct: 34,
-  onsite_pct: 38,
-}
-
-// ─────────────────────────────────────────
-// APIResponse envelope from backend:
-//   { success: true, data: T, message: string, count: number }
-// ─────────────────────────────────────────
-
-interface BackendEnvelope<T> {
+interface Envelope<T> {
   success: boolean
   data: T
   message: string
   count?: number
 }
 
-async function tryFetch<T>(endpoint: string, mock: T): Promise<T> {
-  try {
-    const res = await api.get<BackendEnvelope<T>>(endpoint)
-    return res.data.data        // unwrap the envelope
-  } catch {
-    console.warn(`[analyticsService] Using mock data for: ${endpoint}`)
-    return mock
+async function get<T>(endpoint: string, params?: Record<string, unknown>): Promise<T> {
+  const res = await api.get<Envelope<T>>(endpoint, { params })
+  if (!res.data.success) {
+    throw new Error(res.data.message || `API error on ${endpoint}`)
+  }
+  return res.data.data
+}
+
+// ─────────────────────────────────────────
+// Individual real endpoint calls
+// ─────────────────────────────────────────
+
+async function fetchHiringTrends(): Promise<HiringTrendPoint[]> {
+  // GET /api/v1/workforce/hiring-trends?start_year=2018&end_year=2024
+  // Returns: { year, total_postings, avg_salary_usd, remote_postings }
+  return get<HiringTrendPoint[]>('/workforce/hiring-trends', { start_year: 2018, end_year: 2024 })
+}
+
+async function fetchByCountry(): Promise<CountryHiringStats[]> {
+  // GET /api/v1/workforce/by-country?year=2024&limit=10
+  // Returns: { country_name, country_code, region, total_postings, avg_salary_usd }
+  return get<CountryHiringStats[]>('/workforce/by-country', { year: 2024, limit: 10 })
+}
+
+async function fetchByIndustry(): Promise<IndustryHiringStats[]> {
+  // GET /api/v1/workforce/by-industry?year=2024&limit=10
+  // Returns: { industry_name, sector, total_postings, avg_salary_usd, ai_adoption_index }
+  return get<IndustryHiringStats[]>('/workforce/by-industry', { year: 2024, limit: 10 })
+}
+
+async function fetchRemoteStats(): Promise<RemoteBreakdown> {
+  // GET /api/v1/workforce/remote-stats?year=2024
+  // Returns: { total_postings, remote_postings, onsite_postings, remote_pct }
+  return get<RemoteBreakdown>('/workforce/remote-stats', { year: 2024 })
+}
+
+async function fetchSalaryTrends(): Promise<SalaryTrendPoint[]> {
+  // GET /api/v1/salary/trends?start_year=2018&end_year=2024
+  // Returns: { year, avg_salary_usd, salary_growth_pct, median_salary_usd }
+  return get<SalaryTrendPoint[]>('/salary/trends', { start_year: 2018, end_year: 2024 })
+}
+
+async function fetchTopGrowingSkill(): Promise<GrowingSkill[]> {
+  // GET /api/v1/skills/top-growing?year=2024&limit=1
+  // Returns: [{ skill_name, skill_category, is_ai_related, growth_pct, avg_demand_score }]
+  return get<GrowingSkill[]>('/skills/top-growing', { year: 2024, limit: 1 })
+}
+
+async function fetchDisruptionTrends(): Promise<DisruptionTrend[]> {
+  // GET /api/v1/ai-impact/trends?start_year=2024&end_year=2024
+  // Returns: [{ year, avg_automation_risk, avg_future_safe, avg_ai_replacement }]
+  return get<DisruptionTrend[]>('/ai-impact/trends', { start_year: 2024, end_year: 2024 })
+}
+
+// ─────────────────────────────────────────
+// deriveKpi
+//
+// Builds KpiSummary from real API responses.
+// No invented numbers. Every field is traceable
+// to a specific endpoint + field.
+// ─────────────────────────────────────────
+
+function deriveKpi(
+  trends:      HiringTrendPoint[],
+  countries:   CountryHiringStats[],
+  industries:  IndustryHiringStats[],
+  salaryPts:   SalaryTrendPoint[],
+  topSkills:   GrowingSkill[],
+  disruption:  DisruptionTrend[],
+): KpiSummary {
+  // Latest hiring year
+  const sorted      = [...trends].sort((a, b) => b.year - a.year)
+  const latest      = sorted[0]
+  const previous    = sorted[1]
+
+  const total_job_postings = latest?.total_postings ?? 0
+
+  // YoY job growth %: (latest - previous) / previous * 100
+  const yoy_job_growth_pct =
+    latest && previous && previous.total_postings > 0
+      ? parseFloat((((latest.total_postings - previous.total_postings) / previous.total_postings) * 100).toFixed(1))
+      : 0
+
+  // Salary from latest salary trend point
+  const latestSalary        = [...salaryPts].sort((a, b) => b.year - a.year)[0]
+  const avg_salary_usd      = latestSalary?.avg_salary_usd ?? 0
+  const yoy_salary_growth_pct = latestSalary?.salary_growth_pct ?? 0
+
+  // Counts from array lengths
+  const total_countries  = countries.length
+  const total_industries = industries.length
+
+  // Top skill from skills endpoint
+  const top_growing_skill = topSkills[0]?.skill_name ?? 'N/A'
+
+  // Disruption index from latest trend point
+  const ai_disruption_index = disruption[0]?.avg_automation_risk ?? 0
+
+  return {
+    total_job_postings,
+    avg_salary_usd,
+    total_countries,
+    total_industries,
+    top_growing_skill,
+    ai_disruption_index,
+    yoy_job_growth_pct,
+    yoy_salary_growth_pct,
   }
 }
 
 // ─────────────────────────────────────────
-// Public API functions
+// fetchDashboardData — main export
+//
+// Called by useDashboardStats hook.
+// Fetches all required data in parallel,
+// derives KPI, returns typed DashboardData.
 // ─────────────────────────────────────────
 
-export async function fetchKpiSummary(): Promise<KpiSummary> {
-  return tryFetch('/analytics/summary', MOCK_KPI)
-}
-
-export async function fetchHiringTrend(): Promise<HiringTrendData> {
-  return tryFetch('/workforce/hiring-trends', MOCK_TREND)
-}
-
-export async function fetchTopIndustries(): Promise<IndustryStat[]> {
-  return tryFetch('/workforce/by-industry', MOCK_INDUSTRIES)
-}
-
-export async function fetchTopCountries(): Promise<CountryStat[]> {
-  return tryFetch('/workforce/by-country', MOCK_COUNTRIES)
-}
-
-export async function fetchRemoteSplit(): Promise<RemoteSplit> {
-  return tryFetch('/workforce/remote-stats', MOCK_REMOTE)
-}
-
-// ── Aggregate fetch: loads all dashboard data in parallel ──
-
 export async function fetchDashboardData(): Promise<DashboardData> {
-  const [kpi, hiringTrend, topIndustries, topCountries, remoteSplit] =
-    await Promise.all([
-      fetchKpiSummary(),
-      fetchHiringTrend(),
-      fetchTopIndustries(),
-      fetchTopCountries(),
-      fetchRemoteSplit(),
-    ])
+  const [
+    hiringTrend,
+    topCountries,
+    topIndustries,
+    remoteSplit,
+    salaryTrends,
+    topSkills,
+    disruptionTrends,
+  ] = await Promise.all([
+    fetchHiringTrends(),
+    fetchByCountry(),
+    fetchByIndustry(),
+    fetchRemoteStats(),
+    fetchSalaryTrends(),
+    fetchTopGrowingSkill(),
+    fetchDisruptionTrends(),
+  ])
 
-  return { kpi, hiringTrend, topIndustries, topCountries, remoteSplit }
+  const kpi = deriveKpi(
+    hiringTrend,
+    topCountries,
+    topIndustries,
+    salaryTrends,
+    topSkills,
+    disruptionTrends,
+  )
+
+  return {
+    kpi,
+    hiringTrend,
+    topIndustries,
+    topCountries,
+    remoteSplit,
+  }
 }

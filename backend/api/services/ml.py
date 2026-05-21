@@ -419,7 +419,8 @@ def detect_salary_anomalies(
         ORDER BY jr.role_name, st.year
     """)
     rows = db.execute(stmt).fetchall()
-    df   = pd.DataFrame(rows, columns=["role_name", "year", "avg_salary_usd"])
+    df = pd.DataFrame(rows, columns=["role_name", "year", "avg_salary_usd"])
+    df["avg_salary_usd"] = df["avg_salary_usd"].astype(float)
 
     if df.empty:
         return []
@@ -480,7 +481,8 @@ def detect_skill_anomalies(
         ORDER BY ds.skill_name, sd.year
     """)
     rows = db.execute(stmt).fetchall()
-    df   = pd.DataFrame(rows, columns=["skill_name", "year", "avg_demand_score"])
+    df = pd.DataFrame(rows, columns=["skill_name", "year", "avg_demand_score"])
+    df["avg_demand_score"] = df["avg_demand_score"].astype(float)
 
     if df.empty:
         return []
