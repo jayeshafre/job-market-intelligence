@@ -107,10 +107,20 @@ def get_chroma_client():
     """
     try:
         import chromadb
+        from chromadb.config import Settings
+
         CHROMA_DB_DIR.mkdir(parents=True, exist_ok=True)
-        client = chromadb.PersistentClient(path=str(CHROMA_DB_DIR))
+
+        client = chromadb.PersistentClient(
+            path=str(CHROMA_DB_DIR),
+            settings=Settings(
+                anonymized_telemetry=False
+            )
+        )
+
         logger.info(f"[RAG] ChromaDB client initialized at {CHROMA_DB_DIR}")
         return client
+
     except ImportError:
         raise RuntimeError(
             "chromadb not installed. Run: pip install chromadb==0.4.22"

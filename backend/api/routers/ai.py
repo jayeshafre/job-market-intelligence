@@ -50,6 +50,11 @@ from api.schemas.ai import (
     MemoryChatRequest, MemoryChatResponse,
 )
 from api.services.ai import ask_groq, kpi_enriched_ask, orchestrated_ask, recommendation_ask
+from api.core.agents.supervisor import run_supervisor
+from api.schemas.ai import (
+    AgentOutput,
+    MultiAgentResponse,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -317,7 +322,42 @@ def chat_v6(
         logger.exception(f"[AI] /chat/v6 unexpected error: {e}")
         raise HTTPException(status_code=500, detail="Unexpected error.")
 
+# =============================================================================
+# POST /chat/v7  (Phase 9 — Multi-Agent)
+# =============================================================================
 
+@router.post(
+    "/chat/v7",
+    response_model=MultiAgentResponse,
+    summary="Phase 9 — Multi-Agent AI System",
+    description=(
+        "A Supervisor Agent reads the question, selects relevant specialist agents "
+        "(Salary, Skills, Hiring, Disruption, Forecast), runs each against the warehouse, "
+        "collects their insights, and synthesizes a unified expert answer via Groq. "
+        "Returns agent_outputs[] showing exactly what each agent contributed."
+    ),
+)
+def chat_v7(
+    request: ChatRequest,
+    db: Session = Depends(get_db),
+) -> MultiAgentResponse:
+    try:
+        result = run_supervisor(question=request.question, db=db)
+        return MultiAgentResponse(
+            question       = request.question,
+            synthesis      = result.synthesis,
+            agent_outputs  = [AgentOutput(**o) for o in result.agent_outputs],
+            execution_plan = result.execution_plan,
+            agents_run     = result.agents_run,
+            agents_failed  = result.agents_failed,
+            tokens_used    = result.tokens_used,
+            model          = result.model,
+        )
+    except Exception as e:
+        logger.exception(f"[AI] /chat/v7 unexpected error: {e}")
+        raise HTTPException(status_code=500, detail="Unexpected error in multi-agent system.")
+    
+    
 # =============================================================================
 # DELETE /memory/{session_id}  (Phase 7)
 # =============================================================================
@@ -458,3 +498,4 @@ def ai_health() -> dict:
         "status":      "ready" if configured else "missing_api_key",
         "redis":       "available" if is_redis_available() else "unavailable",
     }
+

@@ -285,4 +285,43 @@ class MemoryChatResponse(BaseModel):
     turn_count:     int  = Field(description="Number of completed turns in this session.")
     memory_used:    bool = Field(description="True if conversation history was injected.")
     is_new_session: bool = Field(description="True if this was the first message.")
+
+    # =============================================================================
+# PHASE 9 — MULTI-AGENT SCHEMAS
+# =============================================================================
+ 
+class AgentOutput(BaseModel):
+    """Output from a single specialist agent."""
+    agent_name: str   = Field(description="Which agent produced this (e.g. SalaryAgent).")
+    domain:     str   = Field(description="Domain covered (salary/skills/hiring/ai_disruption/forecast).")
+    success:    bool  = Field(description="True if agent completed without error.")
+    insights:   list[str] = Field(default=[], description="Key insight strings extracted by the agent.")
+    error:      str   = Field(default="", description="Error message if success=False.")
+ 
+ 
+class MultiAgentResponse(BaseModel):
+    """
+    Response from POST /api/v1/ai/chat/v7
+ 
+    The most complete AI response in the system.
+    Combines outputs from all relevant specialist agents
+    synthesized by the Supervisor into one unified answer.
+ 
+    synthesis:       The Groq-written unified answer from all agent insights.
+    agent_outputs:   Individual results from each specialist agent.
+    execution_plan:  Which agents were selected and why.
+    agents_run:      Number of agents that completed successfully.
+    agents_failed:   Number of agents that encountered errors.
+    tokens_used:     Groq tokens for the synthesis call only.
+    model:           The model used for synthesis.
+    """
+    question:       str
+    synthesis:      str             = Field(description="Unified answer synthesized from all agent outputs.")
+    agent_outputs:  list[AgentOutput]
+    execution_plan: list[str]       = Field(description="List of agent activation decisions.")
+    agents_run:     int
+    agents_failed:  int
+    tokens_used:    int
+    model:          str
+ 
  

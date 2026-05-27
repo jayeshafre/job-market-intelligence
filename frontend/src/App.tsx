@@ -31,6 +31,9 @@ import Recommendations    from '@/pages/dashboard/Recommendations'
 import DataExplorer       from '@/pages/dashboard/DataExplorer'
 import Reports            from '@/pages/dashboard/Reports'
 
+// Chatbot pages
+import ChatAssistant from '@/pages/chat/ChatAssistant'
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -62,13 +65,13 @@ export default function App() {
             <Route path="/dashboard/data-explorer" element={<DataExplorer />} />
             <Route path="/dashboard/reports"       element={<Reports />}      />
 
-            {/* ── Chatbot routes — Phase 4 ── */}
-            {/* Wired to PlaceholderPage until AI router files are shared */}
-            <Route path="/chat"          element={<PlaceholderPage title="AI Assistant"   phase="Phase 4" description="Groq-powered chat with streaming responses and markdown support." />} />
-            <Route path="/chat/history"  element={<PlaceholderPage title="Chat History"   phase="Phase 4" description="Browse and resume past AI conversations." />} />
-            <Route path="/chat/saved"    element={<PlaceholderPage title="Saved Prompts"  phase="Phase 4" description="Quick-access library of useful analysis prompts." />} />
-            <Route path="/chat/settings" element={<PlaceholderPage title="Model Settings" phase="Phase 4" description="Configure AI model, temperature, and response style." />} />
-            <Route path="/chat/context"  element={<PlaceholderPage title="Data Context"   phase="Phase 4" description="Select which datasets the AI assistant can query." />} />
+              {/* ── Chatbot routes ── */}
+            <Route path="/chat"          element={<ChatAssistant />} />
+            <Route path="/chat/history"  element={<ChatAssistant />} />
+            <Route path="/chat/saved"    element={<ChatAssistant />} />
+            <Route path="/chat/settings" element={<ChatAssistant />} />
+            <Route path="/chat/context"  element={<ChatAssistant />} />
+ 
 
           </Route>
 
